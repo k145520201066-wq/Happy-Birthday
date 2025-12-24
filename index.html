@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Happy Birthday My Love</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Quicksand:wght@300;500;700&family=Montserrat:wght@200;400&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background: #000;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Quicksand', sans-serif;
+            cursor: pointer;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+        }
+
+        .content-overlay {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            width: 90%;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: clamp(2.5rem, 10vw, 3.8rem);
+            color: #ff4d6d;
+            opacity: 0;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255, 77, 109, 0.8);
+        }
+
+        #wish-text {
+            color: #fff;
+            font-size: clamp(1.1rem, 4.5vw, 1.3rem);
+            line-height: 1.7;
+            white-space: pre-line;
+            text-shadow: 1px 1px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .touch-instruction {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 200;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 180px;
+            animation: breathe 3s infinite ease-in-out;
+        }
+
+        @keyframes breathe {
+            0%, 100% { opacity: 0.2; transform: scale(0.95); }
+            50% { opacity: 0.9; transform: scale(1); }
+        }
+
+        #final-message {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Dancing Script', cursive;
+            font-size: clamp(2.5rem, 10vw, 4.2rem);
+            color: #fff;
+            text-align: center;
+            text-shadow: 0 0 20px #fff, 0 0 40px #ff4d6d;
+            opacity: 0;
+            display: none;
+            z-index: 100;
+        }
+
+        .show-final { display: block !important; animation: finalAppear 3s forwards; }
+        @keyframes finalAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+    </style>
+</head>
+<body onclick="startExperience()" ontouchstart="startExperience()">
+
+    <canvas id="canvas"></canvas>
+
+    <div class="content-overlay">
+        <h1 id="main-title">To My Princess ❤️</h1>
+        <div id="wish-text"></div>
+        <div class="touch-instruction" id="instructionTag">Chạm vào màn hình để mở quà</div>
+    </div>
+
+    <div id="final-message">Happy Birthday<br>My Love! ❤️</div>
+
+    <!-- 🎵 NHẠC ĐÃ ĐỔI SANG "50 NĂM VỀ SAU" -->
+    <audio id="bgMusic" loop preload="auto" playsinline>
+        <source src="music/50-nam-ve-sau.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const music = document.getElementById('bgMusic');
+        const title = document.getElementById('main-title');
+        const finalMsg = document.getElementById('final-message');
+        const wishText = document.getElementById('wish-text');
+        const instruction = document.getElementById('instructionTag');
+
+        let fireworks = [], floatingHearts = [], crystalParticles = [];
+        let isStarted = false, showFireworks = false, time = 0;
+
+        function setCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', setCanvasSize);
+        setCanvasSize();
+
+        for (let i = 0; i < 200; i++) {
+            crystalParticles.push({
+                angle: Math.random() * Math.PI * 2,
+                speed: 0.01 + Math.random() * 0.01,
+                radius: Math.random() * 1.5 + 0.5,
+                spread: Math.random() * 10
+            });
+        }
+
+        const message = "Chúc mừng sinh nhật em yêu!\n\nCảm ơn em đã mang đến cho anh những cảm xúc ngọt ngào nhất. Tuổi mới chúc em luôn rạng rỡ, xinh đẹp và hạnh phúc bên anh nhé.\n\nAnh yêu em rất nhiều!";
+
+        function typeWriter() {
+            let i = 0;
+            title.style.opacity = "1";
+            title.style.transition = "opacity 2s";
+            function nextChar() {
+                if (i < message.length) {
+                    wishText.innerHTML += message.charAt(i);
+                    i++;
+                    setTimeout(nextChar, 65);
+                } else {
+                    setTimeout(() => {
+                        title.style.opacity = '0';
+                        wishText.style.opacity = '0';
+                        setTimeout(() => {
+                            title.style.display = 'none';
+                            wishText.style.display = 'none';
+                            finalMsg.classList.add('show-final');
+                            showFireworks = true;
+                        }, 1500);
+                    }, 4000);
+                }
+            }
+            nextChar();
+        }
+
+        class Particle {
+            constructor(x, y, vx, vy, color) {
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+                this.color = color; this.alpha = 1;
+            }
+            update() { this.x += this.vx; this.y += this.vy; this.vy += 0.02; this.alpha -= 0.012; }
+            draw() {
+                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, 1.5, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            }
+        }
+
+        class Firework {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height;
+                this.targetY = Math.random() * (canvas.height * 0.45);
+                this.exploded = false;
+                this.particles = [];
+            }
+            update() {
+                if (!this.exploded) {
+                    this.y -= 7;
+                    if (this.y <= this.targetY) {
+                        this.exploded = true;
+                        for (let i = 0; i < 60; i++) {
+                            const t = (i / 60) * Math.PI * 2;
+                            const vx = (16 * Math.pow(Math.sin(t), 3)) / 8;
+                            const vy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)) / 8;
+                            this.particles.push(new Particle(this.x, this.y, vx, vy, `hsl(${Math.random()*30+340}, 100%, 70%)`));
+                        }
+                    }
+                } else {
+                    this.particles.forEach((p, i) => { p.update(); if (p.alpha <= 0) this.particles.splice(i, 1); });
+                }
+            }
+            draw() {
+                if (!this.exploded) {
+                    ctx.fillStyle = "#fff";
+                    ctx.beginPath(); ctx.arc(this.x, this.y, 2, 0, Math.PI * 2); ctx.fill();
+                } else { this.particles.forEach(p => p.draw()); }
+            }
+        }
+
+        class FloatingHeart {
+            constructor() { this.reset(); this.y = Math.random() * canvas.height; }
+            reset() {
+                this.x = Math.random() * canvas.width; this.y = canvas.height + 20;
+                this.size = Math.random() * 6 + 3; this.speed = Math.random() * 0.8 + 0.4;
+                this.opacity = Math.random() * 0.4 + 0.1;
+            }
+            update() { this.y -= this.speed; if (this.y < -20) this.reset(); }
+            draw() {
+                ctx.save(); ctx.globalAlpha = this.opacity; ctx.fillStyle = "#ff4d6d";
+                ctx.beginPath(); const d = this.size;
+                ctx.moveTo(this.x, this.y);
+                ctx.bezierCurveTo(this.x, this.y-d/2, this.x-d, this.y-d/2, this.x-d, this.y);
+                ctx.bezierCurveTo(this.x-d, this.y+d/2, this.x, this.y+d, this.x, this.y+d);
+                ctx.bezierCurveTo(this.x, this.y+d, this.x+d, this.y+d/2, this.x+d, this.y);
+                ctx.bezierCurveTo(this.x+d, this.y-d/2, this.x, this.y-d/2, this.x, this.y);
+                ctx.fill(); ctx.restore();
+            }
+        }
+
+        function startExperience() {
+            if (isStarted) return;
+            isStarted = true;
+            music.load();
+            music.play().catch(() => {
+                setTimeout(() => music.play(), 150);
+            });
+            instruction.style.opacity = '0';
+            setTimeout(() => { instruction.style.display = 'none'; typeWriter(); }, 500);
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            time += 0.015;
+
+            if (!isStarted) {
+                const centerX = canvas.width/2, centerY = canvas.height/2 - 40, base = Math.min(canvas.width, canvas.height)/40;
+                crystalParticles.forEach(p => {
+                    p.angle += p.speed;
+                    const tx = 16 * Math.pow(Math.sin(p.angle), 3);
+                    const ty = -(13 * Math.cos(p.angle) - 5 * Math.cos(2*p.angle) - 2 * Math.cos(3*p.angle) - Math.cos(4*p.angle));
+                    ctx.fillStyle = "#ff4d6d";
+                    ctx.beginPath();
+                    ctx.arc(centerX + tx*base + Math.cos(p.angle*8)*p.spread,
+                            centerY + ty*base + Math.sin(p.angle*8)*p.spread,
+                            p.radius, 0, Math.PI*2);
+                    ctx.fill();
+                });
+            } else {
+                if (floatingHearts.length < 35) floatingHearts.push(new FloatingHeart());
+                floatingHearts.forEach(h => { h.update(); h.draw(); });
+                if (showFireworks) {
+                    if (Math.random() < 0.05) fireworks.push(new Firework());
+                    fireworks.forEach((f, i) => {
+                        f.update(); f.draw();
+                        if (f.exploded && f.particles.length === 0) fireworks.splice(i, 1);
+                    });
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
